@@ -3,6 +3,7 @@ import {Contract, ethers, providers} from 'ethers';
 import './App.css'
 import {Buffer} from 'buffer'
 import contract from './contracts/StackUp.json';
+import { formatUnits } from 'ethers/lib/utils';
 
 window.Buffer = Buffer;
 const contractAddr = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
@@ -13,6 +14,7 @@ function App() {
 
   const [currentAcct, setCurrentAcct] = useState(null);
   const [adminAddr, setAdminAddr] = useState('');
+  const [allQuestsInfo, setAllQuestsInfo] = useState([])
 
   const connectWalletHandler = async () => {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -49,8 +51,33 @@ const getAdminAddr = async () => {
   }
 };
 
+const getQuestsInfo = async () => {
+    try {
+        const provider = new providers.Web3Provider(window.ethereum)
+        const stackupContract = new Contract(contractAddr, abi, provider)
+
+        const nextQuestId = await stackupContract.nextQuestId()
+        const formatQuestId = formatUnits(nextQuestId, 0)
+
+        let allQuests = []
+        let thisQuest;
+
+        for (let i = 0; i < formatQuestId; i++) {
+          thisQuest = await stackupContract.quests(i);
+          allQuests.push(thisQuest)
+        }
+        
+        console.log('all quests:', allQuests)
+        setAllQuestsInfo(allQuests)
+    } catch (err) {
+        console.log('getQuestsInfo...')
+        console.log(err)
+    }
+}
+
  useEffect(() => {
       getAdminAddr();
+      getQuestsInfo();
  }, []);
 
   return (
@@ -64,6 +91,22 @@ const getAdminAddr = async () => {
               <button onClick={connectWalletHandler}>Connect Wallet</button>
             }
             <h4>Admin address: {adminAddr ? adminAddr : 'Loading...'}</h4>
+            <h2>All Quests:</h2>
+            <div>
+              {
+                allQuestsInfo &&
+                  allQuestsInfo.map((quest, x) => 
+                    <div key={x}>
+                      <h4>{quest[2]}</h4>
+                      <ul>
+                        <li>questId: {quest[0].toString()}</li>
+                        <li>number of players: {quest[1].toString()}</li>
+                        <li>reward: {quest[3]}</li>
+                        <li>number of rewards available: {quest[4].toString()}</li>
+                      </ul>
+                    </div> )
+              }
+            </div>
         </div>
     </>
   )
