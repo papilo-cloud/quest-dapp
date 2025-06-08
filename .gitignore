@@ -1,2 +1,4 @@
 artifacts
 .states
+cache
+node_modules
