@@ -14,7 +14,7 @@ contract StackUp {
         uint256 numberOfPlayers;
         string title;
         uint8 reward;
-        uint256 numberOfRewards;
+        uint256 numberOfRewards; 
     }
 
     address public admin;
@@ -25,6 +25,8 @@ contract StackUp {
     constructor() {
         admin = msg.sender;
     }
+
+    event QuestEvents(Quest quest);
 
     function createQuest(string calldata _title, uint8 _reward, uint256 _numberOfRewards ) external {
         require(msg.sender == admin, "Only the admin can create a quest.");
@@ -38,6 +40,8 @@ contract StackUp {
 
         Quest storage quest = quests[_questId];
         quest.numberOfPlayers++;
+
+        emit QuestEvents(quest);
     }
 
     function submitQuest(uint256 _questId) external questExists(_questId) {
@@ -45,6 +49,9 @@ contract StackUp {
         playerQuestStatus.JOINED, "Player must first join the quest");
         
         playerQuestStatuses[msg.sender][_questId] = playerQuestStatus.SUBMITTED;
+
+        Quest storage quest = quests[_questId];
+        emit QuestEvents(quest);
     }
 
     modifier questExists(uint256 _questId) {
