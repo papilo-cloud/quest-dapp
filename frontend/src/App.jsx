@@ -16,6 +16,7 @@ function App() {
   const [adminAddr, setAdminAddr] = useState('');
   const [allQuestsInfo, setAllQuestsInfo] = useState([])
   const [userQuestStatuses, setUserQuestStatuses] = useState(null);
+  const [questId, setQuestId] = useState('')
 
   const connectWalletHandler = async () => {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -45,7 +46,6 @@ const getAdminAddr = async () => {
     const stackupContract = new Contract(contractAddr, abi, provider);
     const admin = await stackupContract.admin();
     console.log("adminAddr:", admin);
-    console.log("Signer:", provider.getSigner());
     setAdminAddr(admin);
   } catch (err) {
     console.log("getAdminAddr error...");
@@ -116,6 +116,25 @@ const getUserQuestStatus = async () => {
     }
 }
 
+const joinQuestHandler = async () => {
+    try {
+        if (!questId) {
+            alert('Input quest ID before proceeding')
+        } else {
+          const provider = new providers.Web3Provider(window.ethereum)
+          const signer = provider.getSigner()
+          const stackupContract = new Contract(contractAddr, abi, signer)
+          console.log('apple')
+
+          const tx = await stackupContract.joinQuest(questId)
+          await tx.wait()
+        }
+    } catch (err) {
+        console.log(err)
+        alert('error encountered! refer to console log to debug')
+    }
+}
+
  useEffect(() => {
       getAdminAddr();
       getQuestsInfo();
@@ -154,8 +173,8 @@ const getUserQuestStatus = async () => {
                 <ul>
                     {
                       userQuestStatuses &&
-                        userQuestStatuses.map(quest =>
-                          <div>
+                        userQuestStatuses.map((quest, idx) =>
+                          <div key={idx}>
                               <li>
                                   {quest[0]} - {quest[1]}
                               </li>
@@ -163,6 +182,14 @@ const getUserQuestStatus = async () => {
                         )
                     }
                 </ul>
+            </div>
+            <h2>Actions:</h2>
+            <div>
+              <input type="text" 
+                  placeholder='Quest Id' 
+                  value={questId}
+                  onChange={(e) => setQuestId(e.target.value)} />
+              <button onClick={joinQuestHandler}>Join Quest</button>
             </div>
         </div>
     </>
