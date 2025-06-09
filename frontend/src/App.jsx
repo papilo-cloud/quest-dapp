@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {Contract, ethers, providers} from 'ethers';
+import {Contract, providers} from 'ethers';
 import './App.css'
 import {Buffer} from 'buffer'
 import contract from './contracts/StackUp.json';
@@ -116,6 +116,24 @@ const getUserQuestStatus = async () => {
     }
 }
 
+const QuestJoinedListener = () => {
+
+        if(!window.ethereum) return;
+
+        const provider = new providers.Web3Provider(window.ethereum)
+        const stackupContract = new Contract(contractAddr, abi, provider)
+        
+        const handleQuestEvent = (quest) => {
+            alert(`You joined quest: ${quest[2]}`)
+            console.log('You joined quest:', quest[2])
+        }
+
+        stackupContract.on('QuestEvents', handleQuestEvent)
+
+        return () => stackupContract.off('QuestEvents', handleQuestEvent)
+  
+}
+
 const joinQuestHandler = async () => {
     try {
         if (!questId) {
@@ -124,10 +142,11 @@ const joinQuestHandler = async () => {
           const provider = new providers.Web3Provider(window.ethereum)
           const signer = provider.getSigner()
           const stackupContract = new Contract(contractAddr, abi, signer)
-          console.log('apple')
 
           const tx = await stackupContract.joinQuest(questId)
           await tx.wait()
+
+          QuestJoinedListener()
         }
     } catch (err) {
         console.log(err)
@@ -143,10 +162,11 @@ const submitQuestHandler = async () => {
       const provider = new providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const stackupContract = new Contract(contractAddr, abi, signer)
-      console.log('first')
 
       const tx = await stackupContract.submitQuest(questId)
       await tx.wait()
+
+      QuestJoinedListener()
     }
   } catch (err) {
       console.log(err)
@@ -154,10 +174,19 @@ const submitQuestHandler = async () => {
   }
 }
 
+
  useEffect(() => {
-      getAdminAddr();
-      getQuestsInfo();
-      getUserQuestStatus();
+      let ignore = false;
+
+      if (!ignore) {
+        getAdminAddr();
+        getQuestsInfo();
+        getUserQuestStatus();
+      }
+
+      return () => {
+        ignore = true;
+      }
  }, [currentAcct]);
 
   return (
