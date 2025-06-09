@@ -15,6 +15,7 @@ function App() {
   const [currentAcct, setCurrentAcct] = useState(null);
   const [adminAddr, setAdminAddr] = useState('');
   const [allQuestsInfo, setAllQuestsInfo] = useState([])
+  const [userQuestStatuses, setUserQuestStatuses] = useState(null);
 
   const connectWalletHandler = async () => {
     if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -44,6 +45,7 @@ const getAdminAddr = async () => {
     const stackupContract = new Contract(contractAddr, abi, provider);
     const admin = await stackupContract.admin();
     console.log("adminAddr:", admin);
+    console.log("Signer:", provider.getSigner());
     setAdminAddr(admin);
   } catch (err) {
     console.log("getAdminAddr error...");
@@ -66,8 +68,7 @@ const getQuestsInfo = async () => {
           thisQuest = await stackupContract.quests(i);
           allQuests.push(thisQuest)
         }
-        
-        console.log('all quests:', allQuests)
+
         setAllQuestsInfo(allQuests)
     } catch (err) {
         console.log('getQuestsInfo...')
@@ -75,10 +76,51 @@ const getQuestsInfo = async () => {
     }
 }
 
+const getUserQuestStatus = async () => {
+    try {
+      if (currentAcct) {
+        const provider = new providers.Web3Provider(window.ethereum)
+        const stackupContract = new Contract(contractAddr, abi, provider)
+
+        const nextQuestId = await stackupContract.nextQuestId()
+        const formatQuestId = formatUnits(nextQuestId, 0)
+        const questStatusMapping = {
+          0: 'Not Joined',
+          1: 'Joined',
+          2: 'Submitted'
+        }
+
+        let userStatuses = [];
+        let thisQuest;
+
+        for (let i = 0; i < formatQuestId; i++) {
+          let thisQuestStatus = []
+          thisQuest = await stackupContract.quests(i);
+
+          let thisQuestTitle = thisQuest[2]
+          let thisQuestId = thisQuest[0]
+
+          thisQuestStatus.push(thisQuestTitle)
+          const questStatusId = await stackupContract.playerQuestStatuses(currentAcct, thisQuestId);
+          const statusId = questStatusId.toString()
+          thisQuestStatus.push(questStatusMapping[statusId])
+
+          userStatuses.push(thisQuestStatus)
+          
+        }
+        setUserQuestStatuses(userStatuses)
+      }
+    } catch (err) {
+      console.log('getUserQuestStatuses error...')
+      console.log(err)
+    }
+}
+
  useEffect(() => {
       getAdminAddr();
       getQuestsInfo();
- }, []);
+      getUserQuestStatus();
+ }, [currentAcct]);
 
   return (
     <>
@@ -106,6 +148,21 @@ const getQuestsInfo = async () => {
                       </ul>
                     </div> )
               }
+            </div>
+            <h2>Your Quest Statuses:</h2>
+            <div>
+                <ul>
+                    {
+                      userQuestStatuses &&
+                        userQuestStatuses.map(quest =>
+                          <div>
+                              <li>
+                                  {quest[0]} - {quest[1]}
+                              </li>
+                          </div>
+                        )
+                    }
+                </ul>
             </div>
         </div>
     </>
