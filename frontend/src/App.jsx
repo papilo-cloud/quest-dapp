@@ -135,6 +135,25 @@ const joinQuestHandler = async () => {
     }
 }
 
+const submitQuestHandler = async () => {
+  try {
+    if (!questId) {
+      alert('Input quest ID before proceeding')
+    } else {
+      const provider = new providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const stackupContract = new Contract(contractAddr, abi, signer)
+      console.log('first')
+
+      const tx = await stackupContract.submitQuest(questId)
+      await tx.wait()
+    }
+  } catch (err) {
+      console.log(err)
+      alert('error encountered! refer to console log to debug')
+  }
+}
+
  useEffect(() => {
       getAdminAddr();
       getQuestsInfo();
@@ -190,6 +209,7 @@ const joinQuestHandler = async () => {
                   value={questId}
                   onChange={(e) => setQuestId(e.target.value)} />
               <button onClick={joinQuestHandler}>Join Quest</button>
+              <button onClick={submitQuestHandler}>Submit Quest</button>
             </div>
         </div>
     </>
